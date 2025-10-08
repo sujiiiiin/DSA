@@ -1,6 +1,6 @@
 #include <cstdio>
 
-int matrix[2000][2000];
+int matrix[2000][2000]; // 数组越界！
 
 int main()
 {
