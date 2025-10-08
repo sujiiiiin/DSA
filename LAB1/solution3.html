@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二维前缀和算法可视化</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        .matrix-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .matrix-title {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        table {
+            border-collapse: collapse;
+            margin: 0 auto;
+        }
+        td {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-weight: bold;
+            position: relative;
+        }
+        .index {
+            background-color: #ecf0f1;
+            color: #7f8c8d;
+            font-weight: bold;
+        }
+        .highlight {
+            background-color: rgba(41, 128, 185, 0.3);
+        }
+        .query-cell {
+            background-color: rgba(46, 204, 113, 0.3);
+        }
+        .corner-cell {
+            background-color: rgba(231, 76, 60, 0.3);
+        }
+        .formula {
+            background-color: #34495e;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px auto;
+            max-width: 800px;
+            text-align: center;
+            font-family: monospace;
+            font-size: 18px;
+        }
+        .controls {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: inline-block;
+            width: 150px;
+            font-weight: bold;
+        }
+        input, button {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .explanation {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>二维前缀和算法可视化</h1>
+    
+    <div class="controls">
+        <h2>矩阵配置</h2>
+        <div class="input-group">
+            <label for="rows">行数 (n):</label>
+            <input type="number" id="rows" min="1" max="10" value="4">
+        </div>
+        <div class="input-group">
+            <label for="cols">列数 (m):</label>
+            <input type="number" id="cols" min="1" max="10" value="4">
+        </div>
+        <button onclick="generateMatrix()">生成矩阵</button>
+        <button onclick="randomizeMatrix()">随机填充矩阵</button>
+        
+        <h2>查询参数</h2>
+        <div class="input-group">
+            <label for="x">起始行 (x):</label>
+            <input type="number" id="x" min="1" max="4" value="1">
+        </div>
+        <div class="input-group">
+            <label for="y">起始列 (y):</label>
+            <input type="number" id="y" min="1" max="4" value="1">
+        </div>
+        <div class="input-group">
+            <label for="a">行数 (a):</label>
+            <input type="number" id="a" min="1" max="4" value="2">
+        </div>
+        <div class="input-group">
+            <label for="b">列数 (b):</label>
+            <input type="number" id="b" min="1" max="4" value="2">
+        </div>
+        <button onclick="performQuery()">执行查询</button>
+    </div>
+    
+    <div class="container">
+        <div class="matrix-container">
+            <div class="matrix-title">原始矩阵</div>
+            <div id="original-matrix"></div>
+        </div>
+        
+        <div class="matrix-container">
+            <div class="matrix-title">前缀和矩阵</div>
+            <div id="prefix-matrix"></div>
+        </div>
+    </div>
+    
+    <div class="formula" id="formula">
+        前缀和公式: S = PS[x+a-1][y+b-1] - PS[x+a-1][y-1] - PS[x-1][y+b-1] + PS[x-1][y-1]
+    </div>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: rgba(46, 204, 113, 0.3);"></div>
+            <span>查询区域</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: rgba(41, 128, 185, 0.3);"></div>
+            <span>计算涉及区域</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: rgba(231, 76, 60, 0.3);"></div>
+            <span>角点元素</span>
+        </div>
+    </div>
+    
+    <div class="explanation">
+        <h2>算法说明</h2>
+        <p>二维前缀和是一种预处理技术，用于快速计算子矩阵的和。</p>
+        <p>前缀和矩阵 PS 的计算公式：PS[i][j] = PS[i-1][j] + PS[i][j-1] - PS[i-1][j-1] + matrix[i][j]</p>
+        <p>子矩阵和的计算公式：Sum = PS[x+a-1][y+b-1] - PS[x+a-1][y-1] - PS[x-1][y+b-1] + PS[x-1][y-1]</p>
+        <p>该算法将每次查询的时间复杂度从 O(a*b) 降低到 O(1)，非常适合处理大量查询的情况。</p>
+    </div>
+
+    <script>
+        let matrix = [];
+        let prefixSum = [];
+        const n = 4, m = 4;
+        
+        // 初始化页面
+        window.onload = function() {
+            generateMatrix();
+            randomizeMatrix();
+        };
+        
+        // 生成空矩阵
+        function generateMatrix() {
+            const rows = parseInt(document.getElementById('rows').value);
+            const cols = parseInt(document.getElementById('cols').value);
+            
+            matrix = [];
+            for (let i = 0; i < rows; i++) {
+                matrix[i] = [];
+                for (let j = 0; j < cols; j++) {
+                    matrix[i][j] = 0;
+                }
+            }
+            
+            updateOriginalMatrix();
+            calculatePrefixSum();
+            updatePrefixMatrix();
+        }
+        
+        // 随机填充矩阵
+        function randomizeMatrix() {
+            const rows = parseInt(document.getElementById('rows').value);
+            const cols = parseInt(document.getElementById('cols').value);
+            
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    matrix[i][j] = Math.floor(Math.random() * 10) + 1;
+                }
+            }
+            
+            updateOriginalMatrix();
+            calculatePrefixSum();
+            updatePrefixMatrix();
+        }
+        
+        // 计算前缀和矩阵
+        function calculatePrefixSum() {
+            const rows = matrix.length;
+            const cols = matrix[0].length;
+            
+            prefixSum = [];
+            for (let i = 0; i <= rows; i++) {
+                prefixSum[i] = [];
+                for (let j = 0; j <= cols; j++) {
+                    if (i === 0 || j === 0) {
+                        prefixSum[i][j] = 0;
+                    } else {
+                        prefixSum[i][j] = prefixSum[i-1][j] + prefixSum[i][j-1] - prefixSum[i-1][j-1] + matrix[i-1][j-1];
+                    }
+                }
+            }
+        }
+        
+        // 更新原始矩阵显示
+        function updateOriginalMatrix() {
+            const container = document.getElementById('original-matrix');
+            let html = '<table>';
+            
+            // 添加列索引
+            html += '<tr><td class="index"></td>';
+            for (let j = 0; j < matrix[0].length; j++) {
+                html += `<td class="index">${j+1}</td>`;
+            }
+            html += '</tr>';
+            
+            // 添加矩阵数据和行索引
+            for (let i = 0; i < matrix.length; i++) {
+                html += `<tr><td class="index">${i+1}</td>`;
+                for (let j = 0; j < matrix[i].length; j++) {
+                    html += `<td id="cell-${i}-${j}">${matrix[i][j]}</td>`;
+                }
+                html += '</tr>';
+            }
+            
+            html += '</table>';
+            container.innerHTML = html;
+        }
+        
+        // 更新前缀和矩阵显示
+        function updatePrefixMatrix() {
+            const container = document.getElementById('prefix-matrix');
+            let html = '<table>';
+            
+            // 添加列索引（包括0）
+            html += '<tr><td class="index">0</td>';
+            for (let j = 0; j <= matrix[0].length; j++) {
+                html += `<td class="index">${j}</td>`;
+            }
+            html += '</tr>';
+            
+            // 添加矩阵数据和行索引（包括0）
+            for (let i = 0; i <= matrix.length; i++) {
+                html += `<tr><td class="index">${i}</td>`;
+                for (let j = 0; j <= matrix[0].length; j++) {
+                    html += `<td id="prefix-cell-${i}-${j}">${prefixSum[i][j]}</td>`;
+                }
+                html += '</tr>';
+            }
+            
+            html += '</table>';
+            container.innerHTML = html;
+        }
+        
+        // 执行查询
+        function performQuery() {
+            // 清除之前的高亮
+            clearHighlights();
+            
+            const x = parseInt(document.getElementById('x').value);
+            const y = parseInt(document.getElementById('y').value);
+            const a = parseInt(document.getElementById('a').value);
+            const b = parseInt(document.getElementById('b').value);
+            
+            // 验证输入
+            if (x + a - 1 > matrix.length || y + b - 1 > matrix[0].length) {
+                alert('查询参数超出矩阵范围！');
+                return;
+            }
+            
+            // 高亮原始矩阵中的查询区域
+            for (let i = x-1; i < x-1+a; i++) {
+                for (let j = y-1; j < y-1+b; j++) {
+                    document.getElementById(`cell-${i}-${j}`).classList.add('query-cell');
+                }
+            }
+            
+            // 计算子矩阵和
+            const total = prefixSum[x+a-1][y+b-1] - prefixSum[x+a-1][y-1] - prefixSum[x-1][y+b-1] + prefixSum[x-1][y-1];
+            
+            // 高亮前缀和矩阵中的相关单元格
+            document.getElementById(`prefix-cell-${x+a-1}-${y+b-1}`).classList.add('highlight');
+            document.getElementById(`prefix-cell-${x+a-1}-${y-1}`).classList.add('highlight');
+            document.getElementById(`prefix-cell-${x-1}-${y+b-1}`).classList.add('highlight');
+            document.getElementById(`prefix-cell-${x-1}-${y-1}`).classList.add('highlight');
+            
+            // 特别标记四个角点
+            document.getElementById(`prefix-cell-${x+a-1}-${y+b-1}`).classList.add('corner-cell');
+            document.getElementById(`prefix-cell-${x+a-1}-${y-1}`).classList.add('corner-cell');
+            document.getElementById(`prefix-cell-${x-1}-${y+b-1}`).classList.add('corner-cell');
+            document.getElementById(`prefix-cell-${x-1}-${y-1}`).classList.add('corner-cell');
+            
+            // 更新公式显示
+            document.getElementById('formula').innerHTML = 
+                `计算结果: ${prefixSum[x+a-1][y+b-1]} - ${prefixSum[x+a-1][y-1]} - ${prefixSum[x-1][y+b-1]} + ${prefixSum[x-1][y-1]} = ${total}`;
+        }
+        
+        // 清除所有高亮
+        function clearHighlights() {
+            const cells = document.querySelectorAll('td');
+            cells.forEach(cell => {
+                cell.classList.remove('highlight');
+                cell.classList.remove('query-cell');
+                cell.classList.remove('corner-cell');
+            });
+        }
+    </script>
+</body>
+</html>
